@@ -2,7 +2,7 @@ package discovery
 
 import (
 	"encoding/json"
-	"fmt"
+	"log"
 	"time"
 
 	"github.com/google/uuid"
@@ -43,12 +43,29 @@ type discovery struct {
 
 func (d *discovery) add(p *ping) {
 	n, ok := d.nodes[p.ID]
-	if !ok {
-		d.nodes[p.ID] = &node{p.Address, p.ID, time.Now()}
-		fmt.Println("Node Added", d.nodes[p.ID])
-		return
+	if ok {
+		n.LastSeen = time.Now()
+	} else {
+		n = &node{
+			Address:  p.Address,
+			ID:       p.ID,
+			LastSeen: time.Now(),
+		}
+		log.Println("Added", n.ID)
 	}
-	n.LastSeen = time.Now()
+	d.nodes[p.ID] = n
+}
+
+func (d *discovery) check() {
+	for {
+		time.Sleep(3 * time.Second)
+		for _, n := range d.nodes {
+			if n.LastSeen.Before(time.Now().Add(-5 * time.Second)) {
+				log.Println("Deleted", n.ID)
+				delete(d.nodes, n.ID)
+			}
+		}
+	}
 }
 
 func (d *discovery) handle(r *response) {
@@ -70,6 +87,7 @@ func (d *discovery) handle(r *response) {
 
 func (d *discovery) Start() {
 	go d.nw.Start()
+	go d.check()
 	for {
 		select {
 		case message := <-d.nw.Messages():
@@ -93,11 +111,11 @@ func (d *discovery) Ping() {
 	msg := &response{Type: "ping", Data: me}
 	data, _ := json.Marshal(msg)
 	for {
+		time.Sleep(3 * time.Second)
 		err := d.nw.Broadcast(data)
 		if err != nil {
 			d.errors <- err
 		}
-		time.Sleep(3 * time.Second)
 	}
 }
 
