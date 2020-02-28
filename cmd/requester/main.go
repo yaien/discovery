@@ -2,21 +2,22 @@ package main
 
 import (
 	"log"
+	"time"
 
-	"github.com/yaien/discovery/pkg/discovery"
-	"github.com/yaien/discovery/pkg/network/udp"
+	"github.com/yaien/p2p"
+	"github.com/yaien/p2p/pkg/discovery"
+	"github.com/yaien/p2p/pkg/network/udp"
 )
 
 func main() {
 	nw := udp.Network()
 	d := discovery.New(nw)
-	go d.Start()
-	for {
-		select {
-		case message := <-d.Messages():
-			log.Println("Message:", message)
-		case err := <-d.Errors():
-			log.Println("Error: ", err)
-		}
+	requester := p2p.NewRequester(d)
+	time.Sleep(3 * time.Second)
+	res, err := requester.Request("greet", nil)
+	if err != nil {
+		log.Fatal(err)
+		return
 	}
+	log.Println("Response", res)
 }

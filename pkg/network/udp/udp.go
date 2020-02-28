@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net"
 
-	"github.com/yaien/discovery/pkg/network"
+	"github.com/yaien/p2p/pkg/network"
 )
 
 // Config is the configuration of the UDP broadcast based network
@@ -77,11 +77,11 @@ func (u *udp) Send(data []byte, address string) error {
 	if err != nil {
 		return err
 	}
-	broadcast, err := net.ResolveUDPAddr("udp", address)
+	addr, err := net.ResolveUDPAddr("udp", address)
 	if err != nil {
 		return err
 	}
-	_, err = conn.WriteTo(data, broadcast)
+	_, err = conn.WriteTo(data, addr)
 	return err
 }
 

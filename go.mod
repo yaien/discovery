@@ -1,4 +1,4 @@
-module github.com/yaien/discovery
+module github.com/yaien/p2p
 
 go 1.13
 
